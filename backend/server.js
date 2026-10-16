@@ -250,7 +250,7 @@ app.use(errorHandler);
 // ==========================================
 // 4. تشغيل السيرفر
 // ==========================================
-const PORT = process.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => { 
   console.log(
