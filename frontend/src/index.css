@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-brand: #ea580c;
+  --color-brand-hover: #c2410c;
+  --color-action: #FFD814;
+  --color-action-hover: #F7CA00;
+  --color-action-border: #FCD200;
+  --color-action-text: #111827;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9fafb;
+  --color-surface-dark: #111827;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+  --radius-btn: 0.75rem;
+  --radius-card: 1rem;
+  --radius-card-lg: 1.25rem;
+  --radius-full: 9999px;
+  --shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --font-display: 'Amazon Ember', Inter, system-ui, sans-serif;
+  --font-body: Inter, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-body);
+  }
+}
+
+@layer utilities {
+  .font-amazon {
+    font-family: var(--font-display);
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.Toastify__toast {
+  border-radius: var(--radius-card) !important;
+  background: #1a1a1a !important;
+  color: #fff !important;
+  border: 1px solid #333;
+  font-family: var(--font-body);
+}
+.Toastify__toast--success {
+  border-left: 6px solid var(--color-brand) !important;
+}
+.Toastify__toast--error {
+  border-left: 6px solid var(--color-danger) !important;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .invoice-print-container, .invoice-print-container * {
+    visibility: visible;
+  }
+  .invoice-print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm;
+  }
+  .print-btn {
+    display: none !important;
+  }
+}
