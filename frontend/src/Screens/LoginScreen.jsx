@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import axiosInstance from "axios"; 
+import axios from "axios"; 
 import { GoogleLogin } from "@react-oauth/google";
 import { FaEye, FaEyeSlash, FaLock, FaEnvelope, FaMicrochip } from "react-icons/fa";
 import { setCredentials } from "../slices/authSlice";
 import { jwtDecode } from "jwt-decode";
 import { toast } from "react-toastify";
 import LoaderSign from "../components/LoaderSign";
+
+// 🌟 تهيئة Axios Instance برابط الباك إند المباشر لمنع تحويل الطلبات للفرونت إند
+const axiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_ENDPOINT || 'https://conceptual-e-commerce-platform-m2k7.vercel.app',
+});
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
