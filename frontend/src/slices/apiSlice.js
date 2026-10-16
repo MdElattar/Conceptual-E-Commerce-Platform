@@ -1,8 +1,8 @@
 import { fetchBaseQuery, createApi } from '@reduxjs/toolkit/query/react';
 
-// إعداد الكويري الأساسي مع حماية التوكن
+// إعداد الكويري الأساسي مع ربط الدومين بشكل مباشر وصريح للباك إند
 const baseQuery = fetchBaseQuery({
-baseUrl: import.meta.env.VITE_API_ENDPOINT || 'https://conceptual-e-commerce-platform-m2k7.vercel.app',
+  baseUrl: 'https://conceptual-e-commerce-platform-m2k7.vercel.app',
   prepareHeaders: (headers, { getState }) => {
     // سحب التوكن من الـ State أو الـ LocalStorage لضمان أقصى اعتمادية
     const userInfo = getState().auth?.userInfo || JSON.parse(localStorage.getItem('userInfo'));
@@ -16,7 +16,7 @@ baseUrl: import.meta.env.VITE_API_ENDPOINT || 'https://conceptual-e-commerce-pla
 
 export const apiSlice = createApi({
   baseQuery,
-  // التاجات دي هي اللي بتخلي الـ RTK Query سحري في تحديث البيانات تلقائياً
+  // التاجات لتحديث البيانات تلقائياً عبر RTK Query
   tagTypes: ['Product', 'Order', 'User', 'Payment', 'Inquiry', 'Wishlist', 'Return', 'Elite', 'RecentlyViewed', 'VendorSubscription', 'Addresses'], 
   endpoints: () => ({}),
 });
