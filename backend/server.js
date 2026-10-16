@@ -16,7 +16,7 @@ import { initCache } from './utils/cacheService.js';
 // استيراد قواعد البيانات والموديلز
 import connectDB from "./config/db.js";
 import Order from "./models/orderModel.js";
-import User from "./models/userModel.js"; // 🌟 Required for updating the user after verification
+import User from "./models/userModel.js";
 
 // استيراد المسارات (Routes)
 import productRoutes from "./routes/productRoutes.js";
@@ -27,7 +27,7 @@ import inquiryRoutes from "./routes/inquiryRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import shippingRoutes from './routes/shippingRoutes.js'; 
 import couponRoutes from './routes/couponRoutes.js';
-import vendorRoutes from "./routes/vendorRoutes.js"; // 🌟 استيراد مسارات منظومة التجار
+import vendorRoutes from "./routes/vendorRoutes.js";
 import categoryRequestRoutes from './routes/categoryRequestRoutes.js';
 import advertisingRoutes from './routes/advertisingRoutes.js';
 import { checkAndExpireAds } from './controllers/advertisingController.js';
@@ -50,10 +50,24 @@ initCache();
 const stripe = stripePackage(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const server = http.createServer(app);
+
+// 🌟 تحديث إعدادات الـ CORS لـ Socket.io لتشمل الموقع اللايف ومحلياً
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://conceptual-e-commerce-platform.vercel.app"
+];
+
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"], 
-    methods: ["GET", "POST"]
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
@@ -105,9 +119,6 @@ app.post(
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // ----------------------------------------------------
-    // A) Handle Checkout Success (Existing Logic)
-    // ----------------------------------------------------
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
       const orderId = session.metadata?.orderId;
@@ -127,36 +138,11 @@ app.post(
             console.log(`✅ Order ${orderId} updated to PAID via Webhook`);
           }
         }
-
-        if (session.payment_intent && session.customer) {
-          const paymentIntent = await stripe.paymentIntents.retrieve(
-            session.payment_intent
-          );
-
-          if (paymentIntent.payment_method) {
-            await stripe.paymentMethods.attach(paymentIntent.payment_method, {
-              customer: session.customer,
-            });
-
-            await stripe.customers.update(session.customer, {
-              invoice_settings: {
-                default_payment_method: paymentIntent.payment_method,
-              },
-            });
-
-            console.log(
-              `✅ Card ${paymentIntent.payment_method} successfully attached to customer ${session.customer}`
-            );
-          }
-        }
       } catch (error) {
         console.error("❌ Webhook Database/Stripe Update Error:", error.message);
       }
     }
 
-    // ----------------------------------------------------
-    // B) 🌟 Handle Stripe Identity Verification Success
-    // ----------------------------------------------------
     if (event.type === "identity.verification_session.verified") {
       const session = event.data.object;
       const userId = session.metadata?.userId;
@@ -165,22 +151,17 @@ app.post(
         if (userId) {
           const user = await User.findById(userId);
           if (user) {
-            user.role = "vendor"; // Upgrade role
-            
-            // Ensure vendorProfile object exists
+            user.role = "vendor";
             if (!user.vendorProfile) {
                 user.vendorProfile = {};
             }
-            
             user.vendorProfile.isVerified = true; 
-            
             user.vendorProfile.kyc = {
               ...user.vendorProfile.kyc,
               stripeSessionId: session.id,
               verifiedAt: Date.now(),
               status: "Verified_By_Stripe_AI"
             };
-
             await user.save();
             console.log(`✅ User ${userId} successfully upgraded to VERIFIED VENDOR via Stripe AI`);
           }
@@ -208,9 +189,16 @@ const generalLimiter = rateLimit({
 });
 app.use(generalLimiter);
 
+// 🌟 تحديث إعدادات الـ CORS العامة للسيرفر لتشمل الدومين اللايف للفرونت إند
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     exposedHeaders: ["ratelimit-remaining", "x-ratelimit-remaining"],
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -247,7 +235,6 @@ app.use('/api/addresses', addressRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 
-
 const __dirname = path.resolve();
 app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 
@@ -263,7 +250,7 @@ app.use(errorHandler);
 // ==========================================
 // 4. تشغيل السيرفر
 // ==========================================
-const PORT = process.env.PORT || 5000;
+const PORT = process.PORT || 5000;
 
 server.listen(PORT, () => { 
   console.log(
