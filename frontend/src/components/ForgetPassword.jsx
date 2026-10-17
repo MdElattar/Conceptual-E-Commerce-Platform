@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { toast } from 'react-toastify';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaEnvelope, FaLockOpen, FaArrowLeft, FaExclamationCircle, FaMicrochip } from 'react-icons/fa';
@@ -36,7 +36,7 @@ const ForgotPassword = () => {
     setIsError(false); 
 
     try {
-      const { data } = await axios.post('/api/users/forgot-password', { email });
+      const { data } = await axiosInstance.post('/api/users/forgot-password', { email });
       if (data.success) {
         toast.success("Security code dispatched successfully.");
         navigate('/reset-code', { state: { email } });

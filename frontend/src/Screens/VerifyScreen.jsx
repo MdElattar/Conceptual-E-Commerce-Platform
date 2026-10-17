@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { setCredentials } from '../slices/authSlice';
 import { toast } from 'react-toastify';
 import { FaShieldAlt, FaPaperPlane, FaClock, FaMicrochip } from 'react-icons/fa';
@@ -54,7 +54,7 @@ const VerifyScreen = () => {
   const resendHandler = async () => {
     try {
       setIsLoading(true);
-      const { status } = await axios.post('/api/users/resend-otp', { email });
+      const { status } = await axiosInstance.post('/api/users/resend-otp', { email });
       if (status === 200) {
         toast.success('Security protocol initiated: New code sent.');
         setTimer(60);
@@ -99,7 +99,7 @@ const VerifyScreen = () => {
 
     setIsLoading(true);
     try {
-      const { data } = await axios.post('/api/users/verify', {
+      const { data } = await axiosInstance.post('/api/users/verify', {
         email,
         otp: Number(otpString)
       });

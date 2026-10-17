@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { toast } from 'react-toastify';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,12 +16,12 @@ const BecomeVendorScreen = () => {
   // States الهوية التجارية للمتجر
   const [storeName, setStoreName] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
-  const [nationalId, setNationalId] = useState(''); // 🌟 تم إضافة الرقم القومي لحل مشكلة لوحة الأدمن
+  const [nationalId, setNationalId] = useState('');
   const [commercialRegister, setCommercialRegister] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false); 
   
   const [loading, setLoading] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false); // 🌟 State للأنيميشن
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -40,25 +40,23 @@ const BecomeVendorScreen = () => {
       const config = {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`,
+          Authorization: `Bearer ${userInfo?.token}`,
         },
       };
 
       const vendorData = {
         storeName,
         storeDescription,
-        nationalId, // 🌟 بنبعت الرقم القومي للباك إند
+        nationalId,
         commercialRegister,
       };
 
-      // 🔗 استدعاء مسار الباك إند لإنشاء جلسة التحقق
-      const { data } = await axios.post('/api/users/verify-identity', vendorData, config);
+      // 🔗 استخدام axiosInstance الموحد المربوط بدومين الباك إند
+      const { data } = await axiosInstance.post('/api/users/verify-identity', vendorData, config);
       
-      // 🌟 تشغيل الأنيميشن الاحترافي بدل التوجيه الفوري
       setLoading(false);
       setShowSuccess(true);
       
-      // تأخير التوجيه لمدة 3 ثواني عشان اليوزر يشوف الأنيميشن ويقرأ الرسالة
       setTimeout(() => {
         window.location.href = data.url;
       }, 3000);
@@ -168,7 +166,6 @@ const BecomeVendorScreen = () => {
                     <textarea value={storeDescription} onChange={(e) => setStoreDescription(e.target.value)} className="w-full p-4 bg-gray-50 border border-gray-200 focus:border-orange-500 rounded-xl h-32 focus:bg-white transition-all outline-none font-medium resize-none leading-relaxed text-sm text-gray-700" placeholder="Describe the industrial units or parts you intend to sell..." required></textarea>
                   </div>
 
-                  {/* 🌟 حقل الرقم القومي الجديد */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                       <FaFingerprint /> National ID *

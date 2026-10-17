@@ -10,13 +10,12 @@ import {
   FaPlus, FaTrash, FaEdit, FaBarcode, FaSearch
 } from 'react-icons/fa';
 import Button from '../components/Button';
+import axiosInstance from '../utils/axios';
 import {
   useGetProductDetailsQuery,
   useUpdateProductMutation,
   useUploadProductImageMutation
 } from '../slices/productsApiSlice';
-
-const VENDOR_API = '/api/products';
 
 const useVendorEditProductMutation = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,17 +23,18 @@ const useVendorEditProductMutation = () => {
     setIsLoading(true);
     try {
       const token = JSON.parse(localStorage.getItem('userInfo'))?.token;
-      const res = await fetch(`${VENDOR_API}/${data.productId}/vendor-edit`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Failed to update');
-      return json;
+      const { data: resData } = await axiosInstance.put(
+        `/api/products/${data.productId}/vendor-edit`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return resData;
+    } catch (err) {
+      throw new Error(err?.response?.data?.message || 'Failed to update');
     } finally {
       setIsLoading(false);
     }
@@ -48,16 +48,18 @@ const useVendorArchiveMutation = () => {
     setIsLoading(true);
     try {
       const token = JSON.parse(localStorage.getItem('userInfo'))?.token;
-      const res = await fetch(`${VENDOR_API}/${productId}/archive`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Failed to archive');
-      return json;
+      const { data: resData } = await axiosInstance.put(
+        `/api/products/${productId}/archive`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return resData;
+    } catch (err) {
+      throw new Error(err?.response?.data?.message || 'Failed to archive');
     } finally {
       setIsLoading(false);
     }
@@ -71,17 +73,18 @@ const useVendorHideMutation = () => {
     setIsLoading(true);
     try {
       const token = JSON.parse(localStorage.getItem('userInfo'))?.token;
-      const res = await fetch(`${VENDOR_API}/${productId}/hide`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ reason }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Failed to hide');
-      return json;
+      const { data: resData } = await axiosInstance.put(
+        `/api/products/${productId}/hide`,
+        { reason },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return resData;
+    } catch (err) {
+      throw new Error(err?.response?.data?.message || 'Failed to hide');
     } finally {
       setIsLoading(false);
     }
@@ -95,16 +98,18 @@ const useVendorSubmitMutation = () => {
     setIsLoading(true);
     try {
       const token = JSON.parse(localStorage.getItem('userInfo'))?.token;
-      const res = await fetch(`${VENDOR_API}/${productId}/submit`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Failed to submit');
-      return json;
+      const { data: resData } = await axiosInstance.put(
+        `/api/products/${productId}/submit`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return resData;
+    } catch (err) {
+      throw new Error(err?.response?.data?.message || 'Failed to submit');
     } finally {
       setIsLoading(false);
     }
@@ -612,7 +617,7 @@ const VendorProductEdit = () => {
                 </Button>
               )}
               {isEditable && product.status === 'active' && (
-                <Button variant="secondary" onClick={() => document.getElementById('hideModal').classList.remove('hidden')}>
+                <Button variant="secondary" onClick={() => document.getElementById('hideModal')?.classList.remove('hidden')}>
                   <FaEye /> Hide from Marketplace
                 </Button>
               )}
@@ -629,33 +634,16 @@ const VendorProductEdit = () => {
         {confirmArchive && (
           <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={() => setConfirmArchive(false)} />
-            <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative z-50 p-8 text-center">
-              <FaArchive className="text-4xl text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-black text-gray-900 mb-2">Archive Product?</h3>
-              <p className="text-sm text-gray-500 mb-6">The product will be removed from your active listings but can be restored later.</p>
-              <div className="flex gap-3">
+            <div className="relative bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+              <h3 className="font-bold text-lg text-gray-900 mb-2">Archive Product?</h3>
+              <p className="text-sm text-gray-500 mb-6">Archiving will remove this product from the marketplace and vendor dashboard.</p>
+              <div className="flex gap-3 justify-end">
                 <Button variant="secondary" onClick={() => setConfirmArchive(false)}>Cancel</Button>
-                <Button variant="danger" onClick={handleArchive} loading={isArchiving}>Archive</Button>
+                <Button variant="danger" loading={isArchiving} onClick={handleArchive}>Archive</Button>
               </div>
             </div>
           </div>
         )}
-
-        {/* Hide Modal */}
-        <div id="hideModal" className="hidden fixed inset-0 z-[3000] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer" onClick={() => document.getElementById('hideModal').classList.add('hidden')} />
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative z-50 p-8">
-            <FaEye className="text-3xl text-yellow-500 mx-auto mb-4" />
-            <h3 className="text-xl font-black text-gray-900 mb-2 text-center">Hide from Marketplace</h3>
-            <p className="text-sm text-gray-500 mb-6 text-center">Your product will not appear in search results or categories.</p>
-            <textarea value={hideReason} onChange={(e) => setHideReason(e.target.value)} placeholder="Reason (optional)" rows={3}
-              className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm mb-6 outline-none focus:border-orange-500 transition-all" />
-            <div className="flex gap-3">
-              <Button variant="secondary" onClick={() => document.getElementById('hideModal').classList.add('hidden')}>Cancel</Button>
-              <Button variant="secondary" onClick={handleHide} loading={isHiding}>Hide Product</Button>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>

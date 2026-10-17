@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCredentials } from '../slices/authSlice';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import { toast } from 'react-toastify';
@@ -40,7 +40,7 @@ const RegisterScreen = () => {
   const googleSuccess = async (credentialResponse) => {
     try {
       const details = jwtDecode(credentialResponse.credential);
-      const { data } = await axios.post('/api/users/google', {
+      const { data } = await axiosInstance.post('/api/users/google', {
         name: details.name, email: details.email, image: details.picture
       });
       dispatch(setCredentials({ ...data }));
@@ -55,12 +55,12 @@ const RegisterScreen = () => {
     e.preventDefault();
     if (password !== confirmPassword) return toast.error('Passwords do not match');
 
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!\%*?&]{8,}$/;
     if (!strongPasswordRegex.test(password)) return toast.error("Security Level Low: Follow password requirements.");
 
     setIsLoading(true);
     try {
-      await axios.post('/api/users', { name, email, phone , password });
+      await axiosInstance.post('/api/users', { name, email, phone , password });
       localStorage.setItem('verifyEmail', email);
       navigate('/verify', { state: { email } });
       toast.info('Verification code dispatched to your email');

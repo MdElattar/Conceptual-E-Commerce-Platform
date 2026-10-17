@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaShieldAlt, FaSyncAlt, FaArrowRight, FaMicrochip } from 'react-icons/fa';
@@ -29,7 +29,7 @@ const ResetCode = () => {
 
     const handleResend = async () => {
         try {
-            await axios.post('/api/users/forgot-password', { email });
+            await axiosInstance.post('/api/users/forgot-password', { email });
             toast.success("New code transmitted successfully");
             setTimer(60);
             setOtp(new Array(6).fill(""));
@@ -63,7 +63,7 @@ const ResetCode = () => {
         const code = otp.join('');
         setIsLoading(true);
         try {
-            const { data } = await axios.post('/api/users/verify-reset-code', {
+            const { data } = await axiosInstance.post('/api/users/verify-reset-code', {
                 email,
                 otp: code
             });

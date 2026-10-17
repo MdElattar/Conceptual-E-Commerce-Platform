@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { toast } from 'react-toastify';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +9,7 @@ import {
   FaCheck, FaTimes, FaExclamationTriangle, FaStore, 
   FaUserTie, FaBoxOpen, FaEdit, FaLayerGroup, FaIdCard, FaEnvelope,
   FaUserCheck, FaFileAlt, FaMoneyBillWave, FaUniversity, FaClock,
-  FaBullhorn // 🌟 أيقونة الإعلانات
+  FaBullhorn
 } from 'react-icons/fa';
 
 const AdminVendorApprovals = () => {
@@ -27,7 +27,7 @@ const AdminVendorApprovals = () => {
   const [pendingVendors, setPendingVendors] = useState([]); 
   const [categoryRequests, setCategoryRequests] = useState([]); 
   const [payoutRequests, setPayoutRequests] = useState([]); 
-  const [adRequests, setAdRequests] = useState([]); // 🌟 [جديد] حالة طلبات الإعلانات
+  const [adRequests, setAdRequests] = useState([]);
 
   const predefinedCategories = [
     "Automotive Parts", "Beauty & Personal Care", "Cameras & Photo",
@@ -55,37 +55,37 @@ const AdminVendorApprovals = () => {
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
         
         // 1. Fetch Pending Products
-        const { data: productsData } = await axios.get('/api/products?isAdminQuery=true', config);
+        const { data: productsData } = await axiosInstance.get('/api/products?isAdminQuery=true', config);
         const filteredProducts = Array.isArray(productsData) ? productsData.filter(p => p.status === 'pending') : [];
         setPendingProducts(filteredProducts);
 
         // 2. Fetch Pending Vendor KYC
         try {
-            const { data: vendorsData } = await axios.get('/api/users/vendor-requests-list', config);
+            const { data: vendorsData } = await axiosInstance.get('/api/users/vendor-requests-list', config);
             setPendingVendors(Array.isArray(vendorsData) ? vendorsData : []);
         } catch (e) { console.warn("Vendor requests endpoint might be missing", e); }
 
         // 3. Fetch Category Requests 
         try {
-            const { data: catReqData } = await axios.get('/api/category-requests', config);
+            const { data: catReqData } = await axiosInstance.get('/api/category-requests', config);
             setCategoryRequests(Array.isArray(catReqData) ? catReqData.filter(c => c.status === 'pending') : []);
         } catch (e) { console.warn("Category requests endpoint missing", e); }
 
         // 4. Fetch Payout Requests 
         try {
-            const { data: payoutData } = await axios.get('/api/orders/payout-requests', config);
+            const { data: payoutData } = await axiosInstance.get('/api/orders/payout-requests', config);
             setPayoutRequests(Array.isArray(payoutData) ? payoutData.filter(p => p.status === 'pending') : []);
         } catch (e) { console.warn("Payout requests endpoint missing", e); }
 
-        // 🌟 5. Fetch Ad Campaign Requests (طلبات الإعلانات)
+        // 5. Fetch Ad Campaign Requests
         try {
-            const { data: adsData } = await axios.get('/api/advertising/requests', config); // تأكد من إنشاء هذا المسار في الباك إند
+            const { data: adsData } = await axiosInstance.get('/api/advertising/requests', config);
             setAdRequests(Array.isArray(adsData) ? adsData.filter(a => a.status === 'pending') : []);
         } catch (e) { console.warn("Ad requests endpoint missing", e); }
 
       } catch (_) {
         toast.error("Failed to sync approval matrices.");
-      } finally {
+      } font-medium {
         setLoading(false);
       }
     };
@@ -97,7 +97,7 @@ const AdminVendorApprovals = () => {
     if (window.confirm('Approve this product and push it LIVE to the marketplace?')) {
       try {
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-        await axios.put(`/api/products/${id}/approve`, { status: 'active', category: currentCategory }, config);
+        await axiosInstance.put(`/api/products/${id}/approve`, { status: 'active', category: currentCategory }, config);
         toast.success('Product verified and active! 🚀');
         setPendingProducts(pendingProducts.filter(p => p._id !== id));
       } catch (_) { toast.error('Approval execution failed.'); }
@@ -110,7 +110,7 @@ const AdminVendorApprovals = () => {
       if(!reason.trim()) return toast.warning("Rejection reason is required.");
       try {
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-        await axios.put(`/api/products/${id}/reject`, { status: 'rejected', rejectReason: reason }, config);
+        await axiosInstance.put(`/api/products/${id}/reject`, { status: 'rejected', rejectReason: reason }, config);
         toast.success('Product rejected. Vendor notified. ❌');
         setPendingProducts(pendingProducts.filter(p => p._id !== id));
       } catch (_) { toast.error('Rejection execution failed.'); }
@@ -122,7 +122,7 @@ const AdminVendorApprovals = () => {
     if (window.confirm('Verify this user and activate Vendor privileges?')) {
       try {
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-        await axios.put(`/api/users/vendor-approval/${vendorId}`, { action: 'approve' }, config);
+        await axiosInstance.put(`/api/users/vendor-approval/${vendorId}`, { action: 'approve' }, config);
         toast.success('Vendor account verified and activated! ✅');
         setPendingVendors(pendingVendors.filter(v => v._id !== vendorId));
       } catch (error) { toast.error(error.response?.data?.message || 'Vendor approval failed.'); }
@@ -133,7 +133,7 @@ const AdminVendorApprovals = () => {
     if (window.confirm('Reject and delete this vendor registration request?')) {
       try {
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-        await axios.put(`/api/users/vendor-approval/${vendorId}`, { action: 'reject' }, config);
+        await axiosInstance.put(`/api/users/vendor-approval/${vendorId}`, { action: 'reject' }, config);
         toast.success('Vendor request rejected and cleared.');
         setPendingVendors(pendingVendors.filter(v => v._id !== vendorId));
       } catch (error) { toast.error(error.response?.data?.message || 'Rejection failed.'); }
@@ -146,7 +146,7 @@ const AdminVendorApprovals = () => {
     if (window.confirm(`Are you sure you want to ${action} this category request?`)) {
        try {
           const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-          await axios.put(`/api/category-requests/${id}`, { status: isApprove ? 'approved' : 'rejected' }, config);
+          await axiosInstance.put(`/api/category-requests/${id}`, { status: isApprove ? 'approved' : 'rejected' }, config);
           toast.success(`Category request ${action}d!`);
           setCategoryRequests(categoryRequests.filter(c => c._id !== id));
         } catch (_) { toast.error(`Failed to ${action} category request.`); }
@@ -160,21 +160,21 @@ const AdminVendorApprovals = () => {
     if (window.confirm(confirmMsg)) {
        try {
           const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-          await axios.put(`/api/orders/payout-requests/${id}`, { status: isApprove ? 'completed' : 'rejected' }, config);
+          await axiosInstance.put(`/api/orders/payout-requests/${id}`, { status: isApprove ? 'completed' : 'rejected' }, config);
           toast.success(`Payout ${isApprove ? 'marked as complete' : 'rejected'}!`);
           setPayoutRequests(payoutRequests.filter(p => p._id !== id));
        } catch (_) { toast.error(`Failed to process payout.`); }
     }
   };
 
-  // 🌟 [جديد] Handlers: Ad Campaigns ---
+  // Handlers: Ad Campaigns ---
   const resolveAdRequestHandler = async (id, action) => {
     const isApprove = action === 'approve';
     const confirmMsg = isApprove ? 'Approve this campaign and activate the Sponsored status?' : 'Reject this campaign and refund the vendor?';
     if (window.confirm(confirmMsg)) {
        try {
           const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-          await axios.put(`/api/advertising/requests/${id}`, { action: isApprove ? 'approve' : 'reject' }, config);
+          await axiosInstance.put(`/api/advertising/requests/${id}`, { action: isApprove ? 'approve' : 'reject' }, config);
           toast.success(`Ad Campaign ${isApprove ? 'Activated 📢' : 'Rejected and Refunded'}`);
           setAdRequests(adRequests.filter(a => a._id !== id));
        } catch (_) { toast.error(`Failed to process Ad Campaign.`); }
@@ -212,7 +212,7 @@ const AdminVendorApprovals = () => {
         </p>
       </header>
 
-      {/* 🌟 Tab Navigation */}
+      {/* Tab Navigation */}
       <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200 pb-px">
         <button 
           onClick={() => setActiveTab('products')}
@@ -238,7 +238,6 @@ const AdminVendorApprovals = () => {
         >
           <FaMoneyBillWave size={14} /> Payouts ({payoutRequests.length})
         </button>
-        {/* 🌟 5. [جديد] زر الإعلانات */}
         <button 
           onClick={() => setActiveTab('ads')}
           className={`px-6 py-3.5 rounded-t-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center gap-2 ${activeTab === 'ads' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-gray-100 text-gray-500 hover:bg-indigo-50 hover:text-indigo-600'}`}
@@ -325,7 +324,7 @@ const AdminVendorApprovals = () => {
             </motion.div>
           )}
 
-          {/* 🌟 [جديد] TAB 5: AD CAMPAIGN REQUESTS */}
+          {/* TAB 5: AD CAMPAIGN REQUESTS */}
           {activeTab === 'ads' && (
             <motion.div key="ads" variants={tabVariants} initial="hidden" animate="visible" exit="hidden" className="space-y-4">
                <div className="bg-indigo-50 border border-indigo-200 text-indigo-800 p-4 rounded-xl text-xs font-bold flex items-center gap-2 mb-4 shadow-sm">
@@ -405,8 +404,7 @@ const ProductApprovalCard = ({ product, formatter, isRogueCategory, onApprove, o
   </div>
 );
 
-const CategoryRequestCard = ({ request, onResolve }) => {
-  {/* الكود السابق موجود كما هو بالظبط وبدون مساس */}
+const CategoryRequestCard = ({ request, onResolve }) => (
   <div className="bg-white rounded-3xl shadow-sm border border-teal-200 bg-teal-50/20 p-6 flex flex-col xl:flex-row gap-6 items-start xl:items-center">
       <div className="w-full xl:w-[35%] shrink-0">
          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1"><FaLayerGroup/> Proposed Category</p>
@@ -427,7 +425,7 @@ const CategoryRequestCard = ({ request, onResolve }) => {
       <button onClick={() => onResolve(request._id, 'reject')} className="flex-1 xl:flex-none flex items-center justify-center gap-2 bg-white text-red-500 border border-red-200 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all shadow-sm active:scale-95 cursor-pointer"><FaTimes size={12}/> Decline</button>
     </div>
   </div>
-};
+);
 
 const PayoutRequestCard = ({ request, formatter, onResolve }) => {
     const bankData = request.vendor?.vendorProfile?.bankAccount || {};
@@ -460,7 +458,7 @@ const PayoutRequestCard = ({ request, formatter, onResolve }) => {
       </div>
     </div>
   );
-}
+};
 
 const VendorApprovalCard = ({ vendor, onApprove, onReject }) => {
   const profile = vendor.vendorProfile || {};
@@ -491,61 +489,43 @@ const VendorApprovalCard = ({ vendor, onApprove, onReject }) => {
           </div>
         </div>
         <div className="w-full xl:w-[20%] flex flex-col gap-2 shrink-0">
-          <button onClick={() => onApprove(vendor._id)} className="w-full bg-emerald-600 text-white px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 cursor-pointer"><FaCheck size={14}/> Accept Vendor</button>
-          <button onClick={() => onReject(vendor._id)} className="w-full bg-white text-red-600 border border-red-200 px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95 cursor-pointer"><FaTimes size={14}/> Reject Request</button>
+          <button onClick={() => onApprove(vendor._id)} className="w-full bg-emerald-600 text-white px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-md active:scale-95 cursor-pointer"><FaCheck size={12}/> Approve Vendor</button>
+          <button onClick={() => onReject(vendor._id)} className="w-full bg-white text-red-600 border border-red-200 px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all shadow-sm active:scale-95 cursor-pointer"><FaTimes size={12}/> Reject Request</button>
         </div>
       </div>
     </div>
   );
 };
 
-// 🌟 [جديد] كارت عرض طلب الإعلان للأدمن
 const AdRequestCard = ({ request, formatter, onResolve }) => (
   <div className="bg-white rounded-3xl shadow-sm border border-indigo-200 bg-indigo-50/20 p-6 flex flex-col xl:flex-row gap-6 items-start xl:items-center">
-    
-    {/* Product Preview */}
-    <div className="flex items-center gap-4 w-full xl:w-[30%] shrink-0">
-      <div className="w-20 h-20 bg-white rounded-xl border border-gray-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
-        <img src={request.product?.image || '/images/sample.jpg'} alt="Ad Product" className="max-w-full max-h-full object-contain mix-blend-multiply" />
+    <div className="w-full xl:w-[30%] shrink-0 flex items-center gap-4">
+      <div className="w-16 h-16 bg-white rounded-xl border border-gray-200 p-1 shrink-0 flex items-center justify-center overflow-hidden">
+        <img src={request.product?.image} alt={request.product?.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-1 flex items-center gap-1"><FaBullhorn/> Campaign Target</p>
-        <Link to={`/product/${request.product?._id}`} target="_blank" className="text-sm font-black text-gray-900 hover:text-indigo-600 line-clamp-2 block mb-1">
-          {request.product?.name || 'Unknown Product'}
-        </Link>
+      <div>
+        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5 flex items-center gap-1"><FaBullhorn className="text-indigo-500"/> Sponsored Product</p>
+        <h3 className="text-sm font-black text-gray-900 line-clamp-1">{request.product?.name || 'Product'}</h3>
+        <p className="text-xs font-black text-indigo-600 mt-1">{formatter(request.amountPaid)}</p>
       </div>
     </div>
-
-    {/* Package Details */}
-    <div className="flex-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-inner">
-      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Package Details</p>
-      <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
-         <div>
-            <h4 className="text-xs font-black text-gray-900">{request.package?.name || 'Standard Boost'}</h4>
-            <p className="text-[10px] font-bold text-gray-500 mt-0.5">Duration: {request.package?.days || 7} Days</p>
-         </div>
-         <div className="text-right">
-            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Paid Amount</p>
-            <p className="text-base font-black text-emerald-600">{formatter(request.package?.priceUSD || 0)}</p>
-         </div>
+    <div className="flex-1 bg-white p-3.5 rounded-xl border border-gray-200 shadow-inner flex items-center justify-between text-xs font-mono font-bold text-gray-700">
+      <div>
+        <span className="text-gray-400 block text-[9px] uppercase font-sans">Campaign Duration</span>
+        <span>{request.durationDays} Days</span>
+      </div>
+      <div>
+        <span className="text-gray-400 block text-[9px] uppercase font-sans">Requested On</span>
+        <span>{new Date(request.createdAt).toLocaleDateString()}</span>
       </div>
     </div>
-
-    {/* Vendor Info */}
     <div className="w-full xl:w-[20%] shrink-0 border-l-0 xl:border-l border-indigo-200 xl:pl-6">
-      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Advertiser</p>
-      <div className="flex items-center gap-2 mb-1.5"><FaStore className="text-indigo-600 shrink-0" size={12} /><span className="text-xs font-bold text-gray-900 truncate">{request.vendor?.storeName || 'Vendor'}</span></div>
-      <p className="text-[10px] font-mono text-gray-500 font-bold truncate">{request.vendor?.email || 'N/A'}</p>
+      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Vendor</p>
+      <div className="flex items-center gap-2"><FaStore className="text-indigo-600 shrink-0" size={12} /><span className="text-xs font-bold text-gray-900 truncate">{request.vendor?.storeName || 'Vendor'}</span></div>
     </div>
-
-    {/* Actions */}
     <div className="w-full xl:w-auto xl:ml-auto flex xl:flex-col gap-2 shrink-0">
-      <button onClick={() => onResolve(request._id, 'approve')} className="flex-1 xl:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md active:scale-95 cursor-pointer">
-        <FaCheck size={12}/> Activate Ad
-      </button>
-      <button onClick={() => onResolve(request._id, 'reject')} className="flex-1 xl:flex-none flex items-center justify-center gap-2 bg-white text-red-500 border border-red-200 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all shadow-sm active:scale-95 cursor-pointer">
-        <FaTimes size={12}/> Reject & Refund
-      </button>
+      <button onClick={() => onResolve(request._id, 'approve')} className="flex-1 xl:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md active:scale-95 cursor-pointer"><FaCheck size={12}/> Activate Campaign</button>
+      <button onClick={() => onResolve(request._id, 'reject')} className="flex-1 xl:flex-none flex items-center justify-center gap-2 bg-white text-red-500 border border-red-200 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all shadow-sm active:scale-95 cursor-pointer"><FaTimes size={12}/> Reject & Refund</button>
     </div>
   </div>
 );

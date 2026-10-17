@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { toast } from 'react-toastify';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaLock, FaShieldAlt, FaKey, FaMicrochip } from 'react-icons/fa';
@@ -24,7 +24,7 @@ const NewPassword = () => {
     }, [email, navigate]);
 
     const checkStrength = (pass) => {
-        const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!\%*?&]{8,}$/;
         if (pass.length === 0) {
             setStrength({ label: '', color: 'bg-gray-200', width: '0%', textClass: 'text-gray-400' });
         } else if (strongRegex.test(pass)) {
@@ -49,7 +49,7 @@ const NewPassword = () => {
 
         setIsLoading(true);
         try {
-            const { data } = await axios.post('/api/users/reset-password', {
+            const { data } = await axiosInstance.post('/api/users/reset-password', {
                 email,
                 password
             });

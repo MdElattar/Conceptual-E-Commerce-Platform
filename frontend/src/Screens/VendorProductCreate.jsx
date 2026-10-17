@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 // eslint-disable-next-line no-unused-vars
@@ -147,7 +147,7 @@ const VendorProductCreate = () => {
 
     try {
       const config = { headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${userInfo.token}` } };
-      const { data } = await axios.post('/api/upload', uploadData, config);
+      const { data } = await axiosInstance.post('/api/upload', uploadData, config);
 
       if (isGallery) {
         setFormData(prev => ({ ...prev, images: [...prev.images, data] }));
@@ -197,7 +197,7 @@ const VendorProductCreate = () => {
     try {
       const formatArray = (str) => str.split(',').map(item => item.trim()).filter(item => item !== "");
 
-      // 🌟 Send Exact USD Base Values, Backend enforces status 'pending'
+      // Send Exact USD Base Values, Backend enforces status 'pending'
       const productPayload = {
         name: formData.name, 
         price: Number(formData.price), // USD Base
@@ -214,7 +214,6 @@ const VendorProductCreate = () => {
         images: formData.images, 
         sku: formData.sku,
         dynamicAttributes: formData.dynamicAttributes.filter(a => a.key.trim() !== "" && a.value.trim() !== ""),
-        // Send SEO data if backend supports it, otherwise it's just UX
       };
 
       await createProduct(productPayload).unwrap();
@@ -238,7 +237,7 @@ const VendorProductCreate = () => {
   return (
     <div className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-[100rem] mx-auto font-sans text-gray-900 bg-gray-50 min-h-screen">
       
-      {/* 🌟 Smart Draft Notice */}
+      {/* Smart Draft Notice */}
       <AnimatePresence>
         {showDraftNotice && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="mb-6 bg-blue-50 border border-blue-200 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
@@ -275,7 +274,7 @@ const VendorProductCreate = () => {
             <p className="text-gray-500 mt-2 font-bold uppercase tracking-widest text-xs">Submit payload for administrative review</p>
         </div>
         
-        {/* 🌟 Product Quality Score Card */}
+        {/* Product Quality Score Card */}
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm w-full md:w-72 shrink-0">
             <div className="flex justify-between items-end mb-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Listing Quality</span>
@@ -305,7 +304,6 @@ const VendorProductCreate = () => {
               <div className="space-y-2">
                 <div className="flex justify-between items-center mb-1 ml-1">
                   <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Category Hub</label>
-                  {/* 🌟 VENDOR ONLY: Routes to new category request page */}
                   <Link to="/vendor/category/request" target="_blank" className="text-[9px] font-black uppercase tracking-wider text-orange-600 hover:underline cursor-pointer">Request New?</Link>
                 </div>
                 <div className="relative">
@@ -343,7 +341,7 @@ const VendorProductCreate = () => {
             </div>
           </section>
 
-          {/* 🌟 SEO Section */}
+          {/* SEO Section */}
           <section className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-200 space-y-6">
             <h2 className="text-sm font-black uppercase tracking-widest border-b border-gray-100 pb-4 mb-6 flex items-center gap-2 text-gray-900">
                 <FaSearch className="text-blue-500"/> SEO Optimization
@@ -491,7 +489,6 @@ const VendorProductCreate = () => {
 
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
               <div className="col-span-2">
-                {/* 🌟 Ensure Vendor understands pricing is USD Base */}
                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-2 block flex justify-between">
                   <span>System Base Price (USD)</span>
                 </label>
@@ -499,7 +496,6 @@ const VendorProductCreate = () => {
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold group-focus-within:text-orange-500 transition-colors">$</span>
                   <input type="number" step="0.01" value={formData.price} onChange={(e) => handleInputChange('price', e.target.value)} className="w-full p-3 pl-8 bg-gray-50 rounded-xl font-black text-gray-900 border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 outline-none font-mono transition-all shadow-inner" />
                 </div>
-                {/* 🌟 Dynamic Vendor Profit Calculator based on Local Rate */}
                 <div className="mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
                   <p className="text-[9px] font-black text-emerald-800 uppercase tracking-widest mb-1">Local Payout Estimate (-10% Fee)</p>
                   <p className="font-mono font-black text-emerald-600 text-sm">
@@ -514,38 +510,11 @@ const VendorProductCreate = () => {
                 </div>
               </div>
             </div>
-          </section>
 
-          <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 space-y-4">
-            <div>
-              <h3 className="font-black text-gray-900 text-sm flex items-center gap-2 uppercase tracking-widest mb-1">Variant Matrix</h3>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-4">Separate values with commas (,)</p>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all shadow-inner">
-                <FaPalette className="text-orange-500 shrink-0" size={14} />
-                <input type="text" value={formData.colors} onChange={(e) => handleInputChange('colors', e.target.value)} placeholder="e.g. Red, Matte Black, Yellow" className="bg-transparent border-none w-full text-xs font-bold text-gray-900 outline-none placeholder:text-gray-400" />
-              </div>
-              <div className="flex items-center gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/20 transition-all shadow-inner">
-                <FaRulerCombined className="text-orange-500 shrink-0" size={14} />
-                <input type="text" value={formData.sizes} onChange={(e) => handleInputChange('sizes', e.target.value)} placeholder="e.g. XL, 20-inch, Heavy-Duty" className="bg-transparent border-none w-full text-xs font-bold text-gray-900 outline-none placeholder:text-gray-400" />
-              </div>
-            </div>
-          </section>
-
-          <div className="sticky bottom-6 lg:relative lg:bottom-0 z-40 mt-6 pt-2">
-            <button
-              type="submit"
-              disabled={isCreating}
-              className={`w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 border border-transparent cursor-pointer
-                ${isCreating ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-orange-600 text-white hover:bg-gray-900 shadow-orange-600/30'}`}
-            >
-              {isCreating ? (
-                <><span className="animate-spin rounded-full h-5 w-5 border-2 border-gray-400 border-t-transparent"></span> Processing Data...</>
-              ) : 'Submit For Review'}
+            <button type="submit" disabled={isCreating || uploading} className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:bg-gray-950 transition-all active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer">
+              {isCreating ? 'Deploying Listing...' : 'Submit For Approval'}
             </button>
-          </div>
-
+          </section>
         </div>
       </form>
     </div>
